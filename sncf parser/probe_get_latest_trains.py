@@ -8,6 +8,7 @@ from selenium.webdriver.support import expected_conditions as EC
 from selenium.common.exceptions import TimeoutException
 
 import CONSTANTS
+import CONFIG
 
 # https://www.oui.sncf/calendar/FRPAR/FRMPT/20190104/ONE_WAY/2/26-NO_CARD/FRPLY-FRMPL-20190104-20190105-26-NO_CARD-2-6225-false-FR?onlyDirectTrains=false&currency=EUR&lang=fr"
 #                               FROM  TO     DATE     TYPE   CLASS        STATIONS    START    END      CARD         
@@ -252,7 +253,7 @@ class Train:
 
 class Database:
     def __init__(self):
-        self.db = CONSTANTS.DATABASE
+        self.db = CONFIG.DATABASE
 
         if not self._does_table_exists("trains"):
             self._create_table("trains")

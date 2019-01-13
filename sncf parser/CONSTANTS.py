@@ -1,7 +1,6 @@
 import datetime
 
 ROOT_URL = "https://www.oui.sncf/calendar/"
-DATABASE = "/home/romain/var/www/html/scripts/sncf parser/database2.db"
 PERIOD_LOOKUP_INTERVAL = 90
 
 JOURNEYS = (
