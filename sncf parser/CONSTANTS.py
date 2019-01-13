@@ -5,12 +5,17 @@ DATABASE = "database.db"
 
 STATIONS = {
     'Paris': ("FRPLY",),
-    'Montpellier': ("FRMPL",)
+    'Montpellier': ("FRMPL",),
 }
 
 CITIES = {
-    'Paris': 'FRPAR',
-    'Montpellier': 'FRMPT'
+    'Paris': "FRPAR",
+    'Montpellier': "FRMPT",
+    'Avignon': "FRAVN",
+    'Brest': "FRBES",
+    'Quimper': "FRUIP",
+    'Grenoble': "FRGNL",
+    'London': "GBLON"
 }
 
 SCHEDULES = {

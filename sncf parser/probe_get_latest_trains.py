@@ -16,8 +16,24 @@ import CONSTANTS
 JOURNEYS = (
     {
         'departure': 'Paris',
+        'arrival': 'London',
+        'schedules': (('5E', '7AE'),), # digit for week day, MORNING -> M, AFTERNOON -> A, EVENING -> E, DAY -> D
+        'price_minimum': 150,
+        'email': ("arnal.romain@gmail.com",)
+    },
+    {
+        'departure': 'Paris',
         'arrival': 'Montpellier',
         'schedules': (('5E', '7AE'),), # digit for week day, MORNING -> M, AFTERNOON -> A, EVENING -> E, DAY -> D
+        'price_minimum': 150,
+        'email': ("arnal.romain@gmail.com",)
+    },
+    {
+        'departure': 'Paris',
+        'arrival': 'Avignon',
+        'schedules': (('5E', '7AE'),), # digit for week day, MORNING -> M, AFTERNOON -> A, EVENING -> E, DAY -> D
+        'price_minimum': 150,
+        'email': ("arnal.romain@gmail.com",)
     },
 )
 
@@ -38,7 +54,16 @@ def main():
     browser = webdriver.Firefox()
     database = Database()
     generate_journeys(browser, database)
+    browser.close()
 
+
+def start_webdriver():
+    return 
+
+
+def restart_webdriver(browser):
+    browser.close()
+    return start_webdriver()
 
 
 def generate_journeys(browser, database):
@@ -61,9 +86,11 @@ class Journey:
 
     def initialize(self, data):
         self._validate_data(data)
-        self.departure = data['departure']
-        self.arrival = data['arrival']
+        self.departure_city = data['departure']
+        self.arrival_city = data['arrival']
         self.schedules = data['schedules']
+        self.price_minimum = data['price_minimum']
+        self.email = data['email']
         self.trips = []
 
         self._generate_all_urls()
@@ -72,7 +99,7 @@ class Journey:
 
     def _save_trips(self):
         for trip in self.trips:
-            self.database.register_trip(trip, self.date_fetch, self.departure, self.arrival)
+            self.database.register_trip(trip, self.date_fetch, self.departure_city, self.arrival_city)
 
 
     def _generate_all_urls(self):
@@ -101,9 +128,9 @@ class Journey:
     def _generate_url_day(self, way, day):
         url = CONSTANTS.ROOT_URL
         if way:
-            url += CONSTANTS.CITIES[ self.departure ] + "/" + CONSTANTS.CITIES[ self.arrival ] + "/"
+            url += CONSTANTS.CITIES[ self.departure_city ] + "/" + CONSTANTS.CITIES[ self.arrival_city ] + "/"
         else:
-            url += CONSTANTS.CITIES[ self.arrival ] + "/" + CONSTANTS.CITIES[ self.departure ] + "/"
+            url += CONSTANTS.CITIES[ self.arrival_city ] + "/" + CONSTANTS.CITIES[ self.departure_city ] + "/"
         url += day.isoformat().replace('-', '') + "/"
         url += "ONE_WAY/2/26-NO_CARD/" + day.isoformat().replace('-', '') + "?lang=fr"
         return url
@@ -137,24 +164,29 @@ class Trip:
         soup = BeautifulSoup(self.browser.page_source, 'html.parser')
         proposals = soup.find_all(class_="proposal")
         for proposal in proposals:
-            self.trains['go'].append( Train(proposal) )
+            if proposal.attrs['class'][-1] != "push-bus-proposal":
+                self.trains['go'].append( Train(proposal) )
+
 
         # TRAINS BACK
         self._request_url(self.url_back)
         soup = BeautifulSoup(self.browser.page_source, 'html.parser')
         proposals = soup.find_all(class_="proposal")
         for proposal in proposals:
-            self.trains['back'].append( Train(proposal) )
-        
+            if proposal.attrs['class'][-1] != "push-bus-proposal":
+                self.trains['back'].append( Train(proposal) )
+
 
     def _request_url(self, url):
         print(url)
         self.browser.get(url)
+
         try:
             WebDriverWait(self.browser, 60).until(EC.presence_of_element_located((By.CLASS_NAME, 'travel-class')))
-        except TimeoutException:
-            print("too long")
-            self._request_url(url)
+        except:
+            return False
+
+        return True
 
 
 
@@ -166,9 +198,9 @@ class Train:
     
     def _extract_content(self):
         self.price = self._extract_price(self.proposal)
-        self.departure = self._extract_departure_city(self.proposal)
+        self.departure_station = self._extract_departure_station(self.proposal)
         self.departure_time = self._convert_time(self._extract_departure_time(self.proposal))
-        self.arrival = self._extract_arrival_city(self.proposal)
+        self.arrival_station = self._extract_arrival_station(self.proposal)
         self.arrival_time = self._convert_time(self._extract_arrival_time(self.proposal))
         self.duration = self._convert_time(self._extract_duration(self.proposal))
         self.travel_class = self._extract_travel_class(self.proposal)
@@ -204,7 +236,7 @@ class Train:
 
 
     @staticmethod
-    def _extract_arrival_city(raw_data):
+    def _extract_arrival_station(raw_data):
         city = raw_data.find(class_="arrival")
         return city.find(class_="station").string
 
@@ -216,7 +248,7 @@ class Train:
 
 
     @staticmethod
-    def _extract_departure_city(raw_data):
+    def _extract_departure_station(raw_data):
         city = raw_data.find(class_="departure")
         return city.find(class_="station").string
 
@@ -254,7 +286,7 @@ class Database:
                 `arrival_station` TEXT NOT NULL,
                 `duration` TIME NOT NULL,
                 `price` INTEGER NOT NULL,
-                `class` INTEGER,
+                `class` TEXT,
                 `quantity` INTEGER 
             )"""
         )
@@ -273,21 +305,23 @@ class Database:
         return False
         
 
-    def register_trip(self, trip, date, departure, arrival):
+    def register_trip(self, trip, date, departure_city, arrival_city):
         conn = sqlite3.connect(self.db)
         cur = conn.cursor()
         try:
             for train in trip.trains['go']:
                 cur.execute(
-                    "INSERT INTO trains(date_fetch, departure_city, departure_date, departure_time, arrival_city, duration, price, class) \
-                    VALUES(?,?,?,?,?,?,?,?)",
+                    "INSERT INTO trains(date_fetch, departure_city, departure_station, departure_date, departure_time, arrival_city, arrival_station, duration, price, class) \
+                    VALUES(?,?,?,?,?,?,?,?,?,?)",
                     (
                         date.isoformat(),
-                        train.departure,
+                        departure_city,
+                        train.departure_station,
                         trip.date_go.isoformat(),
                         train.departure_time.isoformat(),
-                        train.arrival,
-                        train.duration,
+                        arrival_city,
+                        train.arrival_station,
+                        train.duration.isoformat(),
                         train.price,
                         train.travel_class
                     )
@@ -295,20 +329,23 @@ class Database:
 
             for train in trip.trains['back']:
                 cur.execute(
-                    "INSERT INTO trains(date_fetch, departure_city, departure_date, departure_time, arrival_city, duration, price, class) \
-                    VALUES(?,?,?,?,?,?,?,?)",
+                    "INSERT INTO trains(date_fetch, departure_city, departure_station, departure_date, departure_time, arrival_city, arrival_station, duration, price, class) \
+                    VALUES(?,?,?,?,?,?,?,?,?,?)",
                     (
                         date.isoformat(),
-                        train.departure,
+                        arrival_city,
+                        train.departure_station,
                         trip.date_back.isoformat(),
                         train.departure_time.isoformat(),
-                        train.arrival,
-                        train.duration,
+                        departure_city,
+                        train.arrival_station,
+                        train.duration.isoformat(),
                         train.price,
                         train.travel_class
                     )
                 )
         except Exception as e:
+            conn.commit()
             conn.close()
             raise Exception(e)
         
@@ -319,6 +356,6 @@ class Database:
 
 
 if __name__ == "__main__":
-    data = Database()
-    print(data._does_table_exists("trains"))
+    main()
+
     
