@@ -9,32 +9,6 @@ from selenium.common.exceptions import TimeoutException
 
 import CONSTANTS
 
-
-
-### PROGRAM DATA ###
-
-JOURNEYS = (
-    {
-        'departure': 'Paris',
-        'arrival': 'London',    # Beware that the departure and arrival cities are referenced in CONSTANTS.CITIES
-        'schedules': ((5, 7),), # the digits represent a week day (1 being monday and 7 sunday)tuple because we can insert several schedules
-    },                          # Tuple in order to let the possibiliy to have several schedules for a trip - example: ((5, 7), 6, 7))
-    {
-        'departure': 'Paris',
-        'arrival': 'Montpellier',
-        'schedules': ((5, 7),),
-    },
-    {
-        'departure': 'Paris',
-        'arrival': 'Avignon',
-        'schedules': ((5, 7),),
-    },
-)
-
-
-PERIOD_LOOKUP_INTERVAL = 90
-
-
 # https://www.oui.sncf/calendar/FRPAR/FRMPT/20190104/ONE_WAY/2/26-NO_CARD/FRPLY-FRMPL-20190104-20190105-26-NO_CARD-2-6225-false-FR?onlyDirectTrains=false&currency=EUR&lang=fr"
 #                               FROM  TO     DATE     TYPE   CLASS        STATIONS    START    END      CARD         
 
@@ -63,7 +37,7 @@ def generate_journeys(browser, database):
     journeys = []
     date_fetch = datetime.datetime.today()
 
-    for data in JOURNEYS:
+    for data in CONSTANTS.JOURNEYS:
         journeys.append(Journey(browser, database, date_fetch))
         journeys[-1].initialize(data)
     return journeys
@@ -98,7 +72,7 @@ class Journey:
             day_go, day_back = schedule
 
             day = datetime.date.today()
-            end_period = day + datetime.timedelta(days=PERIOD_LOOKUP_INTERVAL)
+            end_period = day + datetime.timedelta(days=CONSTANTS.PERIOD_LOOKUP_INTERVAL)
             trip = []
 
             while day <= end_period:

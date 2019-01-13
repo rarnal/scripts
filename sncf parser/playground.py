@@ -91,10 +91,20 @@ def validate_email(email):
     return False
 
 
-def main():
+def draft_email():
     pg = playground()
-    pg.get_cheapest_per_day("Paris", "Montpellier", max_price=150, departure_time="17h00", arrival_time="16h00")
+
+    for journey in CONSTANTS.JOURNEYS:
+        res = pg.get_cheapest_per_day( 
+            journey['departure'],
+            journey['arrival'],
+            max_price=journey['max_price'],
+            departure_time=journey['time_depart'],
+            arrival_time=journey['time_arrival']
+            )
+
+        print(res)
 
 
 if __name__=="__main__":
-    main()
+    draft_email()
