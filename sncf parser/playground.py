@@ -251,8 +251,8 @@ def create_message_with_attachment(sender, to, subject, message_text, file_dir, 
     main_type, sub_type = content_type.split('/', 1)
 
     if main_type == 'text':
-        fp = open(path, 'r')
-        msg = MIMEText(fp.read().encode().decode(), _subtype=sub_type)
+        fp = open(path, 'r') # should be 'r' and not 'rb' in py3
+        msg = MIMEText(fp.read().encode().decode(), _subtype=sub_type) # in py3 we need to add .encode().decode() in order to fix the encoding
         fp.close()
     elif main_type == 'image':
         fp = open(path, 'rb')
