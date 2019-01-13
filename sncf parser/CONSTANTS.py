@@ -1,7 +1,7 @@
 import datetime
 
 ROOT_URL = "https://www.oui.sncf/calendar/"
-DATABASE = "database.db"
+DATABASE = "/home/romain/var/www/html/scripts/sncf parser/database2.db"
 
 STATIONS = {
     'Paris': ("FRPLY",),

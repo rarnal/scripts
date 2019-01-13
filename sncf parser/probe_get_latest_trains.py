@@ -16,30 +16,23 @@ import CONSTANTS
 JOURNEYS = (
     {
         'departure': 'Paris',
-        'arrival': 'London',
-        'schedules': (('5E', '7AE'),), # digit for week day, MORNING -> M, AFTERNOON -> A, EVENING -> E, DAY -> D
-        'price_minimum': 150,
-        'email': ("arnal.romain@gmail.com",)
-    },
+        'arrival': 'London',    # Beware that the departure and arrival cities are referenced in CONSTANTS.CITIES
+        'schedules': ((5, 7),), # the digits represent a week day (1 being monday and 7 sunday)tuple because we can insert several schedules
+    },                          # Tuple in order to let the possibiliy to have several schedules for a trip - example: ((5, 7), 6, 7))
     {
         'departure': 'Paris',
         'arrival': 'Montpellier',
-        'schedules': (('5E', '7AE'),), # digit for week day, MORNING -> M, AFTERNOON -> A, EVENING -> E, DAY -> D
-        'price_minimum': 150,
-        'email': ("arnal.romain@gmail.com",)
+        'schedules': ((5, 7),),
     },
     {
         'departure': 'Paris',
         'arrival': 'Avignon',
-        'schedules': (('5E', '7AE'),), # digit for week day, MORNING -> M, AFTERNOON -> A, EVENING -> E, DAY -> D
-        'price_minimum': 150,
-        'email': ("arnal.romain@gmail.com",)
+        'schedules': ((5, 7),),
     },
 )
 
 
-START_PERIOD = datetime.date.today()
-END_PERIOD = START_PERIOD + datetime.timedelta(days=90)
+PERIOD_LOOKUP_INTERVAL = 90
 
 
 # https://www.oui.sncf/calendar/FRPAR/FRMPT/20190104/ONE_WAY/2/26-NO_CARD/FRPLY-FRMPL-20190104-20190105-26-NO_CARD-2-6225-false-FR?onlyDirectTrains=false&currency=EUR&lang=fr"
@@ -89,8 +82,6 @@ class Journey:
         self.departure_city = data['departure']
         self.arrival_city = data['arrival']
         self.schedules = data['schedules']
-        self.price_minimum = data['price_minimum']
-        self.email = data['email']
         self.trips = []
 
         self._generate_all_urls()
@@ -99,18 +90,18 @@ class Journey:
 
     def _save_trips(self):
         for trip in self.trips:
-            self.database.register_trip(trip, self.date_fetch, self.departure_city, self.arrival_city)
+            self.database.register_trip(trip, self)
 
 
     def _generate_all_urls(self):
         for schedule in self.schedules:
-            day_go = int(schedule[0][0])
-            day_back = int(schedule[1][0])
+            day_go, day_back = schedule
 
-            day = START_PERIOD
+            day = datetime.date.today()
+            end_period = day + datetime.timedelta(days=PERIOD_LOOKUP_INTERVAL)
             trip = []
 
-            while day <= END_PERIOD:
+            while day <= end_period:
                 if day.isoweekday() == day_go:
                     url = self._generate_url_day(True, day)
                     trip = [url, day]
@@ -164,8 +155,17 @@ class Trip:
         soup = BeautifulSoup(self.browser.page_source, 'html.parser')
         proposals = soup.find_all(class_="proposal")
         for proposal in proposals:
-            if proposal.attrs['class'][-1] != "push-bus-proposal":
-                self.trains['go'].append( Train(proposal) )
+            my_train = None
+            if "push-bus-proposal" not in proposal.attrs['class']:
+                for _ in range(5):
+                    try:
+                        my_train = Train(proposal, self.url_go)
+                    except:
+                        self._request_url(self.url_go)
+                    else:
+                        break
+                if my_train:
+                    self.trains['go'].append(my_train)
 
 
         # TRAINS BACK
@@ -173,8 +173,20 @@ class Trip:
         soup = BeautifulSoup(self.browser.page_source, 'html.parser')
         proposals = soup.find_all(class_="proposal")
         for proposal in proposals:
-            if proposal.attrs['class'][-1] != "push-bus-proposal":
-                self.trains['back'].append( Train(proposal) )
+            my_train = None
+            if "push-bus-proposal" not in proposal.attrs['class']:
+                for _ in range(5):
+                    try:
+                        my_train = Train(proposal, self.url_back)
+                    except Exception as e:
+                        print(e)
+                        print("\n")
+                        print(proposal.prettify())
+                        print("\n\n\n\n\n\n\n\n")
+                    else:
+                        break
+                if my_train:
+                    self.trains['back'].append(my_train)
 
 
     def _request_url(self, url):
@@ -182,7 +194,7 @@ class Trip:
         self.browser.get(url)
 
         try:
-            WebDriverWait(self.browser, 60).until(EC.presence_of_element_located((By.CLASS_NAME, 'travel-class')))
+            WebDriverWait(self.browser, 60).until(EC.presence_of_element_located((By.CLASS_NAME, 'station')))
         except:
             return False
 
@@ -191,9 +203,11 @@ class Trip:
 
 
 class Train:
-    def __init__(self, proposal):
+    def __init__(self, proposal, url):
         self.proposal = proposal
+        self.url = url
         self._extract_content()
+            
         
     
     def _extract_content(self):
@@ -287,7 +301,8 @@ class Database:
                 `duration` TIME NOT NULL,
                 `price` INTEGER NOT NULL,
                 `class` TEXT,
-                `quantity` INTEGER 
+                `quantity` INTEGER,
+                `url` TEXT
             )"""
         )
         conn.commit()
@@ -305,43 +320,45 @@ class Database:
         return False
         
 
-    def register_trip(self, trip, date, departure_city, arrival_city):
+    def register_trip(self, trip, journey):
         conn = sqlite3.connect(self.db)
         cur = conn.cursor()
         try:
             for train in trip.trains['go']:
                 cur.execute(
-                    "INSERT INTO trains(date_fetch, departure_city, departure_station, departure_date, departure_time, arrival_city, arrival_station, duration, price, class) \
-                    VALUES(?,?,?,?,?,?,?,?,?,?)",
+                    "INSERT INTO trains(date_fetch, departure_city, departure_station, departure_date, departure_time, arrival_city, arrival_station, duration, price, class, url) \
+                    VALUES(?,?,?,?,?,?,?,?,?,?,?)",
                     (
-                        date.isoformat(),
-                        departure_city,
+                        journey.date_fetch.isoformat(),
+                        journey.departure_city,
                         train.departure_station,
                         trip.date_go.isoformat(),
                         train.departure_time.isoformat(),
-                        arrival_city,
+                        journey.arrival_city,
                         train.arrival_station,
                         train.duration.isoformat(),
                         train.price,
-                        train.travel_class
+                        train.travel_class,
+                        train.url
                     )
                 )
 
             for train in trip.trains['back']:
                 cur.execute(
-                    "INSERT INTO trains(date_fetch, departure_city, departure_station, departure_date, departure_time, arrival_city, arrival_station, duration, price, class) \
-                    VALUES(?,?,?,?,?,?,?,?,?,?)",
+                    "INSERT INTO trains(date_fetch, departure_city, departure_station, departure_date, departure_time, arrival_city, arrival_station, duration, price, class, url) \
+                    VALUES(?,?,?,?,?,?,?,?,?,?,?)",
                     (
-                        date.isoformat(),
-                        arrival_city,
+                        journey.date_fetch.isoformat(),
+                        journey.arrival_city,
                         train.departure_station,
                         trip.date_back.isoformat(),
                         train.departure_time.isoformat(),
-                        departure_city,
+                        journey.departure_city,
                         train.arrival_station,
                         train.duration.isoformat(),
                         train.price,
-                        train.travel_class
+                        train.travel_class,
+                        train.url
                     )
                 )
         except Exception as e:
