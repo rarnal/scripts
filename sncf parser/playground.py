@@ -119,7 +119,7 @@ def validate_email(email):
     return False
 
 
-def draft_email():
+def main():
     pg = playground()
 
     for journey in CONSTANTS.JOURNEYS:
@@ -303,4 +303,4 @@ def script_to_authentificate_gmail_session():
 
 
 if __name__=="__main__":
-    draft_email()
+    main()
