@@ -3,6 +3,6 @@ import CONFIG
 import playground
 import probe_get_latest_trains
 
-if __name__ == "__main__":
+def run_sncf_parser():
     probe_get_latest_trains.main()
     playground.main()
