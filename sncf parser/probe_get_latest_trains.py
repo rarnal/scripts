@@ -6,6 +6,7 @@ from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.common.exceptions import TimeoutException
+from selenium.webdriver.firefox.options import Options
 
 import CONSTANTS
 import CONFIG
@@ -19,7 +20,9 @@ import CONFIG
 
 
 def main():
-    browser = webdriver.Firefox()
+    option = Options()
+    option.headless = True
+    browser = webdriver.Firefox(options=option)
     database = Database()
     generate_journeys(browser, database)
     browser.close()
