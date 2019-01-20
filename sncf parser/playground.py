@@ -131,7 +131,8 @@ def main():
             arrival_time=journey['time_arrival']
             )
 
-        here = open("here.html", "w")
+        title = f"{journey['departure']} - {journey['arrival']}.html"
+        here = open(title, "w")
         reshtml = res.to_html(here)
         here.close()
 
@@ -153,7 +154,7 @@ def main():
             to = CONFIG.gmail_recipients,
             subject = f"{datetime.date.today().isoformat()} - Trains from {journey['departure']} to {journey['arrival']}",
             message = message,
-            filename= "here.html",
+            filename = title,
             file_dir=CONFIG.file_dir
         )
 
