@@ -1,4 +1,3 @@
-#! /var/www/venv/py3.6/
 
 import CONSTANTS
 import CONFIG
