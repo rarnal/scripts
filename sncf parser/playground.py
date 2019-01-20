@@ -80,7 +80,7 @@ class playground:
                 t1.departure_city = "{depart}"
                 AND t1.arrival_city = "{arrival}"
                 AND t1.price + t2.price < {max_price}
-                AND Strftime('%Y%m%d', t2.departure_date) - Strftime('%Y%m%d', t1.departure_date) > 0
+                AND Strftime('%Y%m%d', t2.departure_date) - Strftime('%Y%m%d', t1.departure_date) > 1
                 AND Strftime('%Y%m%d', t2.departure_date) - Strftime('%Y%m%d', t1.departure_date) < 7
                 AND t1.date_fetch = "{max_date}"
                 AND t2.date_fetch = "{max_date}"
@@ -136,26 +136,16 @@ def main():
         reshtml = res.to_html(here)
         here.close()
 
-        
-        message = ""
-        for x in range(len(res)):
-            message += f"""
-                {res.at[x, "Total_price"]} € - {res.at[x, "Departure"]} to {res.at[x, "Arrival"]} from {res.at[x, "Depart_date"]} {res.at[x, "Depart_time"]} to {res.at[x, "Return_date"]} {res.at[x, "Return_time"]}
-            """
-
-        message = ("""Hello my beautiful,\n\nThis is just an email to tell you that you are beautiful and I'm in love with you.\n\n""" +
-                   """You are wonderful. I love you.\n\nOnce again, I love you.\n\nHave a good morning my beautiful girl :)\n\n""" +
-                   """Oh additionnally, check in attachment and you'll see the cheaper train for a given destination destination.\n\n""" +
-                   """I'll check how to send that kind of email every day.\n\nLove you, love you, love you again and forever\n\n""")
-
+        message = journey['body']
+        recipients = journey['email']
         
         
         create_and_send_email(
-            to = CONFIG.gmail_recipients,
+            to = recipients,
             subject = f"{datetime.date.today().isoformat()} - Trains from {journey['departure']} to {journey['arrival']}",
             message = message,
             filename = title,
-            file_dir=CONFIG.file_dir
+            file_dir = CONFIG.file_dir
         )
 
 

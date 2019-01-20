@@ -69,6 +69,9 @@ class Journey:
 
 
     def _generate_all_urls(self):
+        if self.schedules == None:
+            self.schedules = [(x, x) for x in range(1, 8)]
+            
         for schedule in self.schedules:
             day_go, day_back = schedule
 
