@@ -227,7 +227,7 @@ def create_message_with_attachment(sender, to, subject, message_text, file_dir, 
         An object containing a base64url encoded email object.
     """
     message = MIMEMultipart()
-    message['to'] = to
+    message['to'] = str(to)
     message['from'] = sender
     message['subject'] = subject
 

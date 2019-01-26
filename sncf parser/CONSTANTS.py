@@ -4,6 +4,12 @@ import CONFIG
 ROOT_URL = "https://www.oui.sncf/calendar/"
 PERIOD_LOOKUP_INTERVAL = 90
 
+
+msg_yy = ("""Hello my beautiful,\n\nThis is just an email to tell you that you are beautiful and I'm in love with you.\n\n""" +
+                   """You are wonderful. I love you.\n\nOnce again, I love you.\n\nHave a good morning my beautiful girl :)\n\n""" +
+                   """Oh additionnally, check in attachment and you'll see the cheaper train for a given destination destination.\n\n""" +
+                   """I'll check how to send that kind of email every day.\n\nLove you, love you, love you again and forever\n\n""")
+
 JOURNEYS = (
     {
         'departure': 'Paris',
@@ -39,36 +45,31 @@ JOURNEYS = (
         'body': msg_yy,
         'low_cost': False,
     },
-    {
-        'departure': 'Avignon',
-        'arrival': 'Barcelona',
-        'schedules': None,
-        'time_depart': "00h00",
-        'time_arrival': "00h00",
-        'max_price': 150,
-        'email': CONFIG.recipients_2,
-        'body': "Regarde la pièce jointe ! Les prix affichés sont pour l'aller et retour",
-        'low_cost': False,
-    },
-    {
-        'departure': 'Avignon',
-        'arrival': 'Paris',
-        'schedules': None,
-        'time_depart': "00h00",
-        'time_arrival': "00h00",
-        'max_price': 150,
-        'email': CONFIG.recipients_2,
-        'body': "Regarde la pièce jointe ! Les prix affichés sont pour l'aller et retour",
-        'low_cost': True,
-    },
+    # {
+    #     'departure': 'Avignon',
+    #     'arrival': 'Barcelona',
+    #     'schedules': None,
+    #     'time_depart': "00h00",
+    #     'time_arrival': "00h00",
+    #     'max_price': 150,
+    #     'email': CONFIG.recipients_2,
+    #     'body': "Regarde la pièce jointe ! Les prix affichés sont pour l'aller et retour",
+    #     'low_cost': False,
+    # },
+    # {
+    #     'departure': 'Avignon',
+    #     'arrival': 'Paris',
+    #     'schedules': None,
+    #     'time_depart': "00h00",
+    #     'time_arrival': "17h00",
+    #     'max_price': 150,
+    #     'email': CONFIG.recipients_2,
+    #     'body': "Regarde la pièce jointe ! Les prix affichés sont pour l'aller et retour",
+    #     'low_cost': True,
+    # },
 )
 
 
-
-msg_yy = ("""Hello my beautiful,\n\nThis is just an email to tell you that you are beautiful and I'm in love with you.\n\n""" +
-                   """You are wonderful. I love you.\n\nOnce again, I love you.\n\nHave a good morning my beautiful girl :)\n\n""" +
-                   """Oh additionnally, check in attachment and you'll see the cheaper train for a given destination destination.\n\n""" +
-                   """I'll check how to send that kind of email every day.\n\nLove you, love you, love you again and forever\n\n""")
 
 ########## ENGINE DATA #################
 
